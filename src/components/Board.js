@@ -27,7 +27,6 @@ class Board extends React.Component {
     flashInterval = 0;
     
 
-    
 
     componentDidUpdate(prevProps,prevState){
         // After 'Play Game' button pressed, startGame() changes playGame state
@@ -42,6 +41,52 @@ class Board extends React.Component {
         }else if(this.state.lose){
             clearInterval(this.intervalId)
         }
+    }
+
+    restartGame=()=>{
+        console.log('hii')
+        if(this.state.lose){
+            clearInterval(this.intervalId);
+            this.setState({
+                pattern: [],
+                patternToMatch: [],
+                stop: false,
+                wins: 0,
+                lose: false,
+                playGame: true
+            });
+            
+        }else{
+            clearInterval(this.intervalId);
+            this.setState(prevState=>({
+                pattern: [],
+                patternToMatch: [],
+                stop: false,
+                wins: 0,
+                lose: false,
+                playGame:false
+                
+            }));
+            setTimeout(()=>{
+                this.setState({playGame:true})
+            },1000);
+            
+                
+            
+        }
+    //     clearInterval(this.intervalId);
+    //     this.setState({
+
+            
+    //         wins: 0,
+    //         playGame: true
+    //     });
+    //     if (this.state.pattern.length === 0) {
+    //         this.addColorToPattern();
+    //     }
+        
+
+        
     }
     addColorToPattern=()=>{
         // This will add a new pattern to the pattern array
@@ -76,12 +121,13 @@ class Board extends React.Component {
             
             console.log('Added color');
         }else{
-            this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null});
-            
+            this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null,patternToMatch:[]});
+            let loseSound = document.getElementById('lose-sound');
             // Play crashing sound when player loses
-            document.getElementById('lose-sound').play();
+            loseSound.play();
             setTimeout(()=>{
-                document.getElementById('lose-sound').pause();
+                loseSound.pause();
+                loseSound.currentTime = 0;
             },1400)
             console.log('You lost');
         }
@@ -186,6 +232,7 @@ class Board extends React.Component {
         // console.log(this.state.playGame)
         return (
             <div>
+                <button id="restart-button" onClick={this.restartGame}>Restart</button>
                 <audio id="lose-sound" src="https://actions.google.com/sounds/v1/impacts/bamboo_drop_and_tumble.ogg"></audio>
                 <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
                 <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
