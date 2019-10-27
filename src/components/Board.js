@@ -77,6 +77,12 @@ class Board extends React.Component {
             console.log('Added color');
         }else{
             this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null});
+            
+            // Play crashing sound when player loses
+            document.getElementById('lose-sound').play();
+            setTimeout(()=>{
+                document.getElementById('lose-sound').pause();
+            },1400)
             console.log('You lost');
         }
     }
@@ -90,7 +96,7 @@ class Board extends React.Component {
     }
 
     startCount=()=>{
-        this.setState({currentCount:4}); // Restart the count to 4
+        this.setState({currentCount:3}); // Restart the count to 4
 
         // Start the timer
         this.intervalId = setInterval(this.timer, 1000);
@@ -180,6 +186,7 @@ class Board extends React.Component {
         // console.log(this.state.playGame)
         return (
             <div>
+                <audio id="lose-sound" src="https://actions.google.com/sounds/v1/impacts/bamboo_drop_and_tumble.ogg"></audio>
                 <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
                 <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
                 <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]}/>
