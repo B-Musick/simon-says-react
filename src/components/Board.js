@@ -13,7 +13,14 @@ class Board extends React.Component {
             stop: false, // Used to stop game
             wins: 0,
             lose: false,
-            currentCount: 4
+            currentCount: 4,
+            sounds: {
+                'red': 'https://s3.amazonaws.com/freecodecamp/simonSound1.mp3',
+                'blue': 'https://s3.amazonaws.com/freecodecamp/simonSound2.mp3',
+                'green': 'https://s3.amazonaws.com/freecodecamp/simonSound3.mp3',
+                'yellow': 'https://s3.amazonaws.com/freecodecamp/simonSound4.mp3',
+
+            }
         };
     }
     intervalId = 0;
@@ -115,14 +122,18 @@ class Board extends React.Component {
             console.log('color')
             // Loop through the colors and display which should be pressed
             // Make button sound as well
-            console.log(patternToMatch.length)
+            
             let colorButton = document.getElementById(patternToMatch[index]);
+            let audioButton = document.getElementById(patternToMatch[index]+"-sound");
+            console.log(audioButton +" audio");
             if (index > 0) {
                 let prevButton = document.getElementById(this.state.patternToMatch[index - 1]);
                 prevButton.style.backgroundColor = 'white';
             }
 
             colorButton.style.backgroundColor = 'red';
+            audioButton.play();
+            
 
                     // colorButton.style.filter = 'brightness(150%)';
             
@@ -160,13 +171,15 @@ class Board extends React.Component {
 
     render() {
         console.log(this.state.patternToMatch);
+        let buttonColors = this.state.buttons;
+        let buttonSounds = this.state.sounds;
         // console.log(this.state.playGame)
         return (
             <div>
-                <Button color={this.state.buttons[0]} handleClick={this.handleClick}/>
-                <Button color={this.state.buttons[1]} handleClick={this.handleClick} />
-                <Button color={this.state.buttons[2]} handleClick={this.handleClick} />
-                <Button color={this.state.buttons[3]} handleClick={this.handleClick} />
+                <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
+                <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
+                <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]}/>
+                <Button color={buttonColors[3]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[3]]}/>
                 <button onClick={this.startGame}>Play Game</button>
                 <div>{this.state.currentCount}</div>
             </div>

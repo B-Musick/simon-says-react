@@ -14,7 +14,11 @@ class Button extends React.Component {
 
     render() {
         return (
-            <div id={this.props.color} onClick={this.handleClick}>Button</div>
+            <div id={this.props.color} onClick={this.handleClick}>
+                {this.props.color}
+                <audio key={this.props.color} id={this.props.color + "-sound"} src={this.props.sound}></audio>
+            
+            </div>
         )
     }
 }
