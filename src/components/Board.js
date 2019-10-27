@@ -116,42 +116,37 @@ class Board extends React.Component {
         // This will go through the current pattern and flash the buttons in the 
         // patternToMatch
         let patternToMatch = this.state.patternToMatch;
-        let index = 0;
-        let doneLoop = false;
+        let index = 0; // Determines when to stop the interval
         this.flashInterval = setInterval(()=>{
-            console.log('color')
             // Loop through the colors and display which should be pressed
             // Make button sound as well
-            
             let colorButton = document.getElementById(patternToMatch[index]);
             let audioButton = document.getElementById(patternToMatch[index]+"-sound");
-            console.log(audioButton +" audio");
+        
             if (index > 0) {
                 let prevButton = document.getElementById(this.state.patternToMatch[index - 1]);
-                prevButton.style.backgroundColor = 'white';
+                // prevButton.style.backgroundColor = 'white';
+                prevButton.style.filter = 'brightness(100%)';
             }
-
-            colorButton.style.backgroundColor = 'red';
+            // Play the button and highlight it so the pattern is showsn
             audioButton.play();
-            
-
-                    // colorButton.style.filter = 'brightness(150%)';
+            colorButton.style.filter = 'brightness(150%)';
             
             if (index < patternToMatch.length - 1) {
                 index++;
             } else {
                 setTimeout(()=>{
                     // This will return the last button to its original background color
-                    document.getElementById(patternToMatch[patternToMatch.length - 1]).style.backgroundColor = 'white';
+                    document.getElementById(patternToMatch[patternToMatch.length - 1]).style.filter = 'brightness(100%)';
                 },1000)
+                // Clear the interval so it stops looping
                 clearInterval(this.flashInterval);
-                doneLoop = true;
                 setTimeout(()=>{
                     this.startCount(); // Start the timer
                 },500)
                 
             }
-            // colorButton.style.filter = 'brightness(100%)';
+            
         },1000)
         
     };
@@ -163,6 +158,15 @@ class Board extends React.Component {
         this.setState(prevState=>({
             pattern: [...prevState.pattern,val]
         }));
+        // Plays sound when clicked and highlight as well
+        document.getElementById(val+"-sound").play();
+        document.getElementById(val).style.filter = 'brightness(150%)';
+        // Remove the brightness to original color
+        setTimeout(()=>{
+            document.getElementById(val).style.filter = 'brightness(100%)';
+        },200);
+        
+        
         // This was giving me trouble, have to clear this interval so doesnt
         // Infinitely loop
         clearInterval(this.intervalId);
