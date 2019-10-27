@@ -17,6 +17,7 @@ class Board extends React.Component {
         };
     }
     intervalId = 0;
+    flashInterval = 0;
     
 
     
@@ -27,8 +28,10 @@ class Board extends React.Component {
         if (!prevState.playGame && this.state.playGame){
             // This will initialize the game, adding first color then start timer
             this.addColorToPattern();
-            this.startCount(); // Start the timer
-            console.log('started timer')
+
+ 
+
+            console.log('started timer');
         }else if(this.state.lose){
             clearInterval(this.intervalId)
         }
@@ -36,12 +39,21 @@ class Board extends React.Component {
     addColorToPattern=()=>{
         // This will add a new pattern to the pattern array
         // Pick random value between 0 and 3 which will be index of color chosen
+        // This is first called when player first presses playGame
+        // then it is called when that round is over in compareClicks()
         let randomVal = Math.floor(Math.random()*4); // Choose value between 0 and 3
         let randomColor = this.state.buttons[randomVal];
         
         this.setState(prevState=>({
             patternToMatch: [...prevState.patternToMatch,randomColor]
         }));
+        // Once the new color is added then start flashing
+        setTimeout(() => {
+            // When the game starts, need to flash the buttons
+            if (this.state.patternToMatch.length > 0) {
+                this.flashButtons();
+            }
+        })
     }
 
     compareClicks=()=>{
@@ -54,7 +66,7 @@ class Board extends React.Component {
             this.setState(prevState => ({ playGame: false, pattern: [], stop: false, wins: prevState.wins + 1, interval: null })); // Reset the array to empty
             // If clicks matched then want to restart the game with an extra color
             this.addColorToPattern();
-            // this.flashButtons();
+            
             console.log('Added color');
         }else{
             this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null});
@@ -86,8 +98,6 @@ class Board extends React.Component {
         }
         else {
             // If count reaches 0 then stop game
-            
-            
             clearInterval(this.intervalId);
             this.compareClicks();
             console.log('game over '+newCount);
@@ -98,20 +108,42 @@ class Board extends React.Component {
     flashButtons=()=>{
         // This will go through the current pattern and flash the buttons in the 
         // patternToMatch
-        this.state.patternToMatch.forEach(color=>{
+        let patternToMatch = this.state.patternToMatch;
+        let index = 0;
+        let doneLoop = false;
+        this.flashInterval = setInterval(()=>{
+            console.log('color')
             // Loop through the colors and display which should be pressed
             // Make button sound as well
-            let colorButton = document.getElementById(color);
-            setTimeout(()=>{
-                colorButton.style.backgroundColor = 'red';
-                // colorButton.style.filter = 'brightness(150%)';
-            },500)
-            
-            colorButton.style.backgroundColor = 'white';
+            console.log(patternToMatch.length)
+            let colorButton = document.getElementById(patternToMatch[index]);
+            if (index > 0) {
+                let prevButton = document.getElementById(this.state.patternToMatch[index - 1]);
+                prevButton.style.backgroundColor = 'white';
+            }
 
+            colorButton.style.backgroundColor = 'red';
+
+                    // colorButton.style.filter = 'brightness(150%)';
+            
+            if (index < patternToMatch.length - 1) {
+                index++;
+            } else {
+                setTimeout(()=>{
+                    // This will return the last button to its original background color
+                    document.getElementById(patternToMatch[patternToMatch.length - 1]).style.backgroundColor = 'white';
+                },1000)
+                clearInterval(this.flashInterval);
+                doneLoop = true;
+                setTimeout(()=>{
+                    this.startCount(); // Start the timer
+                },500)
+                
+            }
             // colorButton.style.filter = 'brightness(100%)';
-        })
-    }
+        },1000)
+        
+    };
     handleClick=(val)=>{
         // This will place the click pattern into an array
         // Need to set a time after they first click and certain time they have to 
