@@ -11,7 +11,7 @@ class Board extends React.Component {
             patternToMatch: [], // holds the pattern that should flash
             playGame: false, // Used for when user presses button to play game,
             stop: false, // Used to stop game
-            wins: 0,
+            wins: 19,
             lose: false,
             currentCount: 4,
             sounds: {
@@ -22,7 +22,8 @@ class Board extends React.Component {
 
             },
             strict:false,
-            win: false // This will determine if clicks checked right after user clicks or not
+            win: false,// This will determine if clicks checked right after user clicks or not
+            flashing: false  // Lets the game know its currently flashing blocks
         };
     }
     intervalId = 0;
@@ -35,17 +36,14 @@ class Board extends React.Component {
         if (!prevState.playGame && this.state.playGame){
             // This will initialize the game, adding first color then start timer
             this.addColorToPattern();
-
- 
-
-            console.log('started timer');
+            console.log('Started timer');
         }else if(this.state.lose){
             clearInterval(this.intervalId)
         }
     }
 
     restartGame=()=>{
-        console.log('hii')
+        console.log('Restarting game');
         if(this.state.lose){
             // If player loses, can press restart and game restarts
             clearInterval(this.intervalId);
@@ -114,13 +112,9 @@ class Board extends React.Component {
                 }else{
                     // If havent hit twenty wins then add color
                     this.addColorToPattern();
-
                     console.log('Added color');
                 }
-
             },500)
- 
-            
         }else{
             
             let loseSound = document.getElementById('lose-sound');
@@ -133,7 +127,6 @@ class Board extends React.Component {
                 loseSound.currentTime = 0;
             },1400)
             console.log('You lost');
-            console.log(this.state.strict)
             // If strict mode then restart whole game
             if (this.state.strict) this.restartGame();
             // If not strict mode then just show buttons again
@@ -145,6 +138,9 @@ class Board extends React.Component {
         }
     };
 
+    setLoss=()=>{
+
+    }
     compareStrictClicks=(array)=>{
         // Called in handleClick() when in strict mode
         let compareClicks = array.every((val, index) => { return val === this.state.patternToMatch[index] });
@@ -159,11 +155,7 @@ class Board extends React.Component {
                 loseSound.currentTime = 0;
             }, 1400)
             console.log('You lost');
-            setTimeout(()=>{
-                this.restartGame();
-            },500);
-            
-        } 
+        }
         return compareClicks;
     };
 
@@ -176,6 +168,7 @@ class Board extends React.Component {
     };
 
     startCount=()=>{
+        this.setState({flashing:false})
         this.setState({currentCount:3}); // Restart the count to 4
 
         // Start the timer
@@ -197,6 +190,7 @@ class Board extends React.Component {
     };
 
     flashButtons=()=>{
+        this.setState({flashing:true});
         // This will go through the current pattern and flash the buttons in the 
         // patternToMatch
         let patternToMatch = this.state.patternToMatch;
@@ -236,52 +230,55 @@ class Board extends React.Component {
     };
 
     handleClick=(val)=>{
-        // This will place the click pattern into an array
-        // Need to set a time after they first click and certain time they have to 
-        // click between clicks
-        // Once time runs out, call compareClicks no matter what then determine if arrays match or not
-        let newPattern = [...this.state.pattern,val];
-        
-        if(this.state.strict){
-            this.compareStrictClicks(newPattern);
-            // If strict, then checks after each button press
-            let compare = newPattern.every((val, index) => { return val === this.state.patternToMatch[index] });
-            
-            this.setState(prevState => ({
-                pattern: [...prevState.pattern, val]
-            }));
-            // Plays sound when clicked and highlight as well
-            if(compare){
-                document.getElementById(val + "-sound").play();
+        if(!this.state.flashing){
+            // This will place the click pattern into an array
+            // Need to set a time after they first click and certain time they have to 
+            // click between clicks
+            // Once time runs out, call compareClicks no matter what then determine if arrays match or not
+            let newPattern = [...this.state.pattern, val];
+
+            if (this.state.strict) {
+                this.compareStrictClicks(newPattern);
+                // If strict, then checks after each button press
+                let compare = newPattern.every((val, index) => { return val === this.state.patternToMatch[index] });
+
+                this.setState(prevState => ({
+                    pattern: [...prevState.pattern, val]
+                }));
+                // Plays sound when clicked and highlight as well
+                if (compare) {
+                    document.getElementById(val + "-sound").play();
+                }
+
+                document.getElementById(val).style.filter = 'brightness(150%)';
+                // Remove the brightness to original color
+                setTimeout(() => {
+                    document.getElementById(val).style.filter = 'brightness(100%)';
+                }, 200);
+
+
             }
-            
-            document.getElementById(val).style.filter = 'brightness(150%)';
-            // Remove the brightness to original color
-            setTimeout(() => {
-                document.getElementById(val).style.filter = 'brightness(100%)';
-            }, 200);
-            
-            
+            else {
+                this.setState(prevState => ({
+                    pattern: [...prevState.pattern, val]
+                }));
+                // Plays sound when clicked and highlight as well
+
+                document.getElementById(val + "-sound").play();
+
+                document.getElementById(val).style.filter = 'brightness(150%)';
+                // Remove the brightness to original color
+                setTimeout(() => {
+                    document.getElementById(val).style.filter = 'brightness(100%)';
+                }, 200);
+
+            }
+            // This was giving me trouble, have to clear this interval so doesnt
+            // Infinitely loop
+            clearInterval(this.intervalId);
+            this.startCount();
         }
-        else{
-            this.setState(prevState => ({
-                pattern: [...prevState.pattern, val]
-            }));
-            // Plays sound when clicked and highlight as well
-            
-            document.getElementById(val + "-sound").play();
-            
-            document.getElementById(val).style.filter = 'brightness(150%)';
-            // Remove the brightness to original color
-            setTimeout(() => {
-                document.getElementById(val).style.filter = 'brightness(100%)';
-            }, 200);
-            
-        }     
-        // This was giving me trouble, have to clear this interval so doesnt
-        // Infinitely loop
-        clearInterval(this.intervalId);
-        this.startCount();
+       
     };
 
     setStrict=()=>{
