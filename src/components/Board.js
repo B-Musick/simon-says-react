@@ -30,7 +30,7 @@ class Board extends React.Component {
     flashInterval=0;
     
     componentWillUpdate(){
-        document.getElementById('score-display').textContent = "SCORE: "+this.state.wins;
+        document.getElementById('score-display').textContent = ""+this.state.wins;
     }
     componentDidUpdate(prevProps,prevState){
         
@@ -162,11 +162,11 @@ class Board extends React.Component {
     compareStrictClicks=(array)=>{
         // Called in handleClick() when in strict mode
         let compareStrictClicks = array.every((val, index) => { return val === this.state.patternToMatch[index] });
-        console.log('compare Strict '+compareStrictClicks);
+        
         if (!compareStrictClicks) {
-            
+            clearInterval(this.intervalId);
             this.setLoss();
-            this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null, patternToMatch: [] });
+            this.setState({ playGame: false, pattern: [], stop: false, interval: null, patternToMatch: [] });
         }
         return compareStrictClicks;
     };
@@ -189,9 +189,9 @@ class Board extends React.Component {
 
     timer=()=>{
         let displayLoss = document.getElementById('win-loss-display');
-        displayLoss.textContent = "";
+        displayLoss.textContent = "SIMON";
         var newCount = this.state.currentCount - 1;
-        console.log(newCount);
+        
         if(newCount>0){
             console.log(this.state)
             this.setState({currentCount:newCount});
@@ -252,8 +252,10 @@ class Board extends React.Component {
             // click between clicks
             // Once time runs out, call compareClicks no matter what then determine if arrays match or not
             let newPattern = [...this.state.pattern, val];
+            this.setFlashClick(val);
+            setTimeout(()=>{
+                if(this.state.strict) {
 
-            if (this.state.strict) {
                 // If strict, then checks after each button press
                 let compare = this.compareStrictClicks(newPattern);
 
@@ -263,13 +265,15 @@ class Board extends React.Component {
                     // click sound
                     document.getElementById(val + "-sound").play();
                 }
-                this.setFlashClick(val);
+
             }
             else {
                 // Plays sound when clicked and highlight as well
                 document.getElementById(val + "-sound").play();
-                this.setFlashClick(val);
-            }
+
+                }
+            },500)
+            
         }
        
     };
@@ -282,10 +286,11 @@ class Board extends React.Component {
         }));
         // Add brightness to current block
         document.getElementById(val).style.filter = 'brightness(150%)';
+
         // Remove the brightness to original color
         setTimeout(() => {
             document.getElementById(val).style.filter = 'brightness(100%)';
-        }, 200);
+        }, 1000);
 
         // This was giving me trouble, have to clear this interval so doesnt
         // Infinitely loop
@@ -304,42 +309,50 @@ class Board extends React.Component {
         this.setState({win:false, playGame:true});
     }
     printLose=()=>{
-        return this.state.lose ? <div>You Lose! Press Restart to try again.</div>:'';
+        return this.state.lose ? <div>You Lose! Press Restart to try again.</div>:'SIMON';
     }
 
     render() {
-        console.log(this.state.patternToMatch);
+       
         let buttonColors = this.state.buttons;
         let buttonSounds = this.state.sounds;
         let win = this.printWin();
         let lose = this.printLose();
         // console.log(this.state.playGame)
         return (
-            <div>
+            <div id="board-title-container">
+                <div id="win-loss-display">{win}{lose}</div>
                 <div id="board-container">
-                    
+
                     <audio id="lose-sound" src="https://actions.google.com/sounds/v1/impacts/bamboo_drop_and_tumble.ogg"></audio>
                     <div id="button-container">
-                        <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
-                        <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
-                        <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]}/>
-                        <Button color={buttonColors[3]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[3]]}/>
+                        <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]} />
+                        <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]} />
+                        <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]} />
+                        <Button color={buttonColors[3]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[3]]} />
                     </div>
                     <div id="center-display-container">
                         <div id="center-button-container">
+                            <div id="score-container">
+                                <div id="score-title-display">SCORE</div>
+                                <div id="score-display">- -</div>
+                            </div>
+
+
+
                             <button onClick={this.setStrict}>{this.state.strict ? 'Unrestrict' : 'Strict'}</button>
                             <button id="restart-button" onClick={this.restartGame}>Restart</button>
                             <button onClick={this.startGame}>{this.state.playGame ? 'Playing' : 'Play Game'}</button>
-                            <div>{this.state.currentCount}</div>
-                            <div id="score-display"></div>
                         </div>
 
                     </div>
 
-                    <div id="win-loss-display">{win}{lose}</div>
-                    
+
+
                 </div>
             </div>
+
+           
         )
     };
 };
