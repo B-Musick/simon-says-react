@@ -11,8 +11,8 @@ class Board extends React.Component {
             patternToMatch: [], // holds the pattern that should flash
             playGame: false, // Used for when user presses button to play game,
             stop: false, // Used to stop game
-            wins: 19,
-            lose: false,
+            wins: 0,
+            lose: false, // When true in strict mode then whole game restarts
             currentCount: 4,
             sounds: {
                 'red': 'https://s3.amazonaws.com/freecodecamp/simonSound1.mp3',
@@ -26,14 +26,23 @@ class Board extends React.Component {
             flashing: false  // Lets the game know its currently flashing blocks
         };
     }
-    intervalId = 0;
-    flashInterval = 0;
+    intervalId=0;
+    flashInterval=0;
     
+    componentWillUpdate(){
+        document.getElementById('score-display').textContent = "SCORE: "+this.state.wins;
+    }
     componentDidUpdate(prevProps,prevState){
         
         // After 'Play Game' button pressed, startGame() changes playGame state
         // value to true, thus when updated, this is called and adds first color to pattern
-        if (!prevState.playGame && this.state.playGame){
+        if(this.state.win){
+            // setTimeout(()=>{
+            //     this.restartGame();
+            // }, 3000)
+            
+        }
+        else if (!prevState.playGame && this.state.playGame){
             // This will initialize the game, adding first color then start timer
             this.addColorToPattern();
             console.log('Started timer');
@@ -43,35 +52,44 @@ class Board extends React.Component {
     }
 
     restartGame=()=>{
-        console.log('Restarting game');
-        if(this.state.lose){
-            // If player loses, can press restart and game restarts
-            clearInterval(this.intervalId);
-            this.setState({
-                pattern: [],
-                patternToMatch: [],
-                stop: false,
-                wins: 0,
-                lose: false,
-                playGame: true
-            });
-            
-        }else{
-            // If press restart during game, the game restarts
-            clearInterval(this.intervalId);
-            this.setState(prevState=>({
-                pattern: [],
-                patternToMatch: [],
-                stop: false,
-                wins: 0,
-                lose: false,
-                playGame:false
-                
-            }));
-            setTimeout(()=>{
-                this.setState({playGame:true})
-            },1000);          
+        if(!this.state.flashing){
+            console.log('Restarting game');
+            if (this.state.lose) {
+                // If player loses, can press restart and game restarts
+                clearInterval(this.intervalId);
+                this.setState({
+                    pattern: [],
+                    patternToMatch: [],
+                    stop: false,
+                    wins: 0,
+                    lose: false,
+                    playGame: true,
+                    win: false,
+                    currentCount: 4,
+                    flashing: false
+                });
+
+            } else {
+                // If press restart during game, the game restarts
+                clearInterval(this.intervalId);
+                this.setState(prevState => ({
+                    pattern: [],
+                    patternToMatch: [],
+                    stop: false,
+                    wins: 0,
+                    lose: false,
+                    playGame: false,
+                    win: false,
+                    currentCount: 4,
+                    flashing: false
+
+                }));
+                setTimeout(() => {
+                    this.setState({ playGame: true })
+                }, 1000);
+            }
         }
+        
     };
 
     addColorToPattern=()=>{
@@ -108,7 +126,8 @@ class Board extends React.Component {
                 if (this.state.wins === 20) {
                     // If user wins twenty rounds then print you win and start over (add something to screen)
                     console.log('You win!');
-                    this.restartGame();
+                    this.setState({win:true,playGame:false});
+                    // this.restartGame();
                 }else{
                     // If havent hit twenty wins then add color
                     this.addColorToPattern();
@@ -116,47 +135,40 @@ class Board extends React.Component {
                 }
             },500)
         }else{
+            // Player lost so set the loss
+            this.setLoss();
             
-            let loseSound = document.getElementById('lose-sound');
-            // this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null, patternToMatch: [] });
-
-            // Play crashing sound when player loses
-            loseSound.play();
-            setTimeout(()=>{
-                loseSound.pause();
-                loseSound.currentTime = 0;
-            },1400)
-            console.log('You lost');
-            // If strict mode then restart whole game
-            if (this.state.strict) this.restartGame();
-            // If not strict mode then just show buttons again
-            else {
-                this.setState({ lose: false, stop: false, interval: null, pattern:[] });
-                this.flashButtons();
-            }
-            
+            // If not strict mode then just show buttons again and dont restart game
+            this.setState({ lose: false, stop: false, interval: null, pattern:[] });
+            let displayLoss = document.getElementById('win-loss-display');
+            displayLoss.textContent = 'Wrong. The pattern will repeat for you friend';
+            this.flashButtons();
         }
     };
 
     setLoss=()=>{
+        let loseSound = document.getElementById('lose-sound');
+        // this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null, patternToMatch: [] });
 
+        // Play crashing sound when player loses
+        loseSound.play();
+        setTimeout(() => {
+            loseSound.pause();
+            loseSound.currentTime = 0;
+        }, 1400)
+        console.log('You lost');
     }
+
     compareStrictClicks=(array)=>{
         // Called in handleClick() when in strict mode
-        let compareClicks = array.every((val, index) => { return val === this.state.patternToMatch[index] });
-        console.log('compare '+compareClicks)
-        if (!compareClicks) {
+        let compareStrictClicks = array.every((val, index) => { return val === this.state.patternToMatch[index] });
+        console.log('compare Strict '+compareStrictClicks);
+        if (!compareStrictClicks) {
+            
+            this.setLoss();
             this.setState({ lose: true, playGame: false, pattern: [], stop: false, interval: null, patternToMatch: [] });
-            let loseSound = document.getElementById('lose-sound');
-            // Play crashing sound when player loses
-            loseSound.play();
-            setTimeout(() => {
-                loseSound.pause();
-                loseSound.currentTime = 0;
-            }, 1400)
-            console.log('You lost');
         }
-        return compareClicks;
+        return compareStrictClicks;
     };
 
     startGame=()=>{
@@ -176,6 +188,8 @@ class Board extends React.Component {
     };
 
     timer=()=>{
+        let displayLoss = document.getElementById('win-loss-display');
+        displayLoss.textContent = "";
         var newCount = this.state.currentCount - 1;
         console.log(newCount);
         if(newCount>0){
@@ -183,6 +197,7 @@ class Board extends React.Component {
             this.setState({currentCount:newCount});
         }
         else {
+            this.setState({ currentCount: newCount });
             // If count reaches 0 then stop game
             clearInterval(this.intervalId);
             this.compareClicks();
@@ -202,17 +217,19 @@ class Board extends React.Component {
             let audioButton = document.getElementById(patternToMatch[index]+"-sound");
         
             if (index > 0) {
+                // Return previous brightened button to normal
                 let prevButton = document.getElementById(this.state.patternToMatch[index - 1]);
-                // prevButton.style.backgroundColor = 'white';
                 prevButton.style.filter = 'brightness(100%)';
             }
-            // Play the button and highlight it so the pattern is showsn
+            // Play the button and highlight it so the pattern is shown
             audioButton.play();
             colorButton.style.filter = 'brightness(150%)';
             
             if (index < patternToMatch.length - 1) {
+                // Continue moving through buttons to flash
                 index++;
             } else {
+                // Finished going through the array
                 setTimeout(()=>{
                     // This will return the last button to its original background color
                     document.getElementById(patternToMatch[patternToMatch.length - 1]).style.filter = 'brightness(100%)';
@@ -222,12 +239,11 @@ class Board extends React.Component {
                 setTimeout(()=>{
                     this.startCount(); // Start the timer
                 },500)
-                
             }
             
         },1000)
         
-    };
+    }; // flashButtons()
 
     handleClick=(val)=>{
         if(!this.state.flashing){
@@ -238,69 +254,91 @@ class Board extends React.Component {
             let newPattern = [...this.state.pattern, val];
 
             if (this.state.strict) {
-                this.compareStrictClicks(newPattern);
                 // If strict, then checks after each button press
-                let compare = newPattern.every((val, index) => { return val === this.state.patternToMatch[index] });
+                let compare = this.compareStrictClicks(newPattern);
 
-                this.setState(prevState => ({
-                    pattern: [...prevState.pattern, val]
-                }));
                 // Plays sound when clicked and highlight as well
                 if (compare) {
+                    // Dont want sound to play over when lose, so when they are the same only play
+                    // click sound
                     document.getElementById(val + "-sound").play();
                 }
-
-                document.getElementById(val).style.filter = 'brightness(150%)';
-                // Remove the brightness to original color
-                setTimeout(() => {
-                    document.getElementById(val).style.filter = 'brightness(100%)';
-                }, 200);
-
-
+                this.setFlashClick(val);
             }
             else {
-                this.setState(prevState => ({
-                    pattern: [...prevState.pattern, val]
-                }));
                 // Plays sound when clicked and highlight as well
-
                 document.getElementById(val + "-sound").play();
-
-                document.getElementById(val).style.filter = 'brightness(150%)';
-                // Remove the brightness to original color
-                setTimeout(() => {
-                    document.getElementById(val).style.filter = 'brightness(100%)';
-                }, 200);
-
+                this.setFlashClick(val);
             }
-            // This was giving me trouble, have to clear this interval so doesnt
-            // Infinitely loop
-            clearInterval(this.intervalId);
-            this.startCount();
         }
        
     };
 
+    setFlashClick=(val)=>{
+        // This will cause the block to flash
+        // Called in handleClicks() method
+        this.setState(prevState => ({
+            pattern: [...prevState.pattern, val]
+        }));
+        // Add brightness to current block
+        document.getElementById(val).style.filter = 'brightness(150%)';
+        // Remove the brightness to original color
+        setTimeout(() => {
+            document.getElementById(val).style.filter = 'brightness(100%)';
+        }, 200);
+
+        // This was giving me trouble, have to clear this interval so doesnt
+        // Infinitely loop
+        clearInterval(this.intervalId);
+        this.startCount();
+    }
     setStrict=()=>{
         this.setState(prevState=>({strict:!prevState.strict}));
     };
+    printWin=()=>{
+        return this.state.wins===20 ? <div>You Win! Would you like to continue?
+            <button onClick={this.continue}>Continue?</button>
+        </div>:'';
+    }
+    continue=()=>{
+        this.setState({win:false, playGame:true});
+    }
+    printLose=()=>{
+        return this.state.lose ? <div>You Lose! Press Restart to try again.</div>:'';
+    }
 
     render() {
         console.log(this.state.patternToMatch);
         let buttonColors = this.state.buttons;
         let buttonSounds = this.state.sounds;
+        let win = this.printWin();
+        let lose = this.printLose();
         // console.log(this.state.playGame)
         return (
             <div>
-                <button onClick={this.setStrict}>Strict</button>
-                <button id="restart-button" onClick={this.restartGame}>Restart</button>
-                <audio id="lose-sound" src="https://actions.google.com/sounds/v1/impacts/bamboo_drop_and_tumble.ogg"></audio>
-                <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
-                <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
-                <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]}/>
-                <Button color={buttonColors[3]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[3]]}/>
-                <button onClick={this.startGame}>Play Game</button>
-                <div>{this.state.currentCount}</div>
+                <div id="board-container">
+                    
+                    <audio id="lose-sound" src="https://actions.google.com/sounds/v1/impacts/bamboo_drop_and_tumble.ogg"></audio>
+                    <div id="button-container">
+                        <Button color={buttonColors[0]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[0]]}/>
+                        <Button color={buttonColors[1]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[1]]}/>
+                        <Button color={buttonColors[2]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[2]]}/>
+                        <Button color={buttonColors[3]} handleClick={this.handleClick} sound={buttonSounds[buttonColors[3]]}/>
+                    </div>
+                    <div id="center-display-container">
+                        <div id="center-button-container">
+                            <button onClick={this.setStrict}>{this.state.strict ? 'Unrestrict' : 'Strict'}</button>
+                            <button id="restart-button" onClick={this.restartGame}>Restart</button>
+                            <button onClick={this.startGame}>{this.state.playGame ? 'Playing' : 'Play Game'}</button>
+                            <div>{this.state.currentCount}</div>
+                            <div id="score-display"></div>
+                        </div>
+
+                    </div>
+
+                    <div id="win-loss-display">{win}{lose}</div>
+                    
+                </div>
             </div>
         )
     };
